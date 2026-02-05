@@ -18,6 +18,7 @@
     "common.world.WorldGenRegionMixin"
   ],
   "client": [
+    "client.multiplayer.ClientboundForgetLevelChunkPacketAccessor",
     "client.multiplayer.ClientPacketListenerMixin",
     "client.world.ClientLevelMixin"
   ],
