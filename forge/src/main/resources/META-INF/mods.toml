@@ -1,0 +1,27 @@
+modLoader = "javafml"
+loaderVersion = "*"
+issueTrackerURL = "https://github.com/PaperMC/Starlight/issues"
+license = "LGPL-3.0-only"
+
+[[mods]]
+modId = "starlight"
+version = "${version}"
+displayName = "Starlight"
+logoFile = "icon.png"
+description = '''Rewrites the light engine to fix lighting performance and lighting errors'''
+authors = "Spottedleaf"
+displayURL = "https://www.curseforge.com/minecraft/mc-mods/starlight"
+
+[[dependencies.starlight]]
+modId = "forge"
+mandatory = true
+versionRange = "[47.0,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.starlight]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[1.20.1,1.21)"
+ordering = "NONE"
+side = "BOTH"

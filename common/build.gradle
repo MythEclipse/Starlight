@@ -1,0 +1,22 @@
+plugins {
+    id 'dev.architectury.loom'
+    id 'architectury-plugin'
+}
+
+architectury {
+    common(['fabric', 'forge'])
+}
+
+loom {
+    accessWidenerPath = file('src/main/resources/starlight.accesswidener')
+}
+
+dependencies {
+    // We depend on fabric loader here to use the fabric @Environment annotations and get the mixin dependencies
+    // Do NOT use other fabric libraries here.
+    modImplementation "net.fabricmc:fabric-loader:${rootProject.ext.loader_version}"
+}
+
+java {
+    withSourcesJar()
+}

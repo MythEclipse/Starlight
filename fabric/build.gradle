@@ -1,0 +1,55 @@
+architectury {
+    platformSetupLoomIde()
+    fabric()
+}
+
+loom {
+    accessWidenerPath = file('../common/src/main/resources/starlight.accesswidener')
+}
+
+configurations {
+    common
+    shadowCommon
+    compileClasspath.extendsFrom configurations.common
+    runtimeClasspath.extendsFrom configurations.common
+    developmentFabric.extendsFrom configurations.common
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${rootProject.ext.minecraft_version}"
+    mappings loom.officialMojangMappings()
+
+    modImplementation "net.fabricmc:fabric-loader:${rootProject.ext.loader_version}"
+
+    common project(path: ":common", configuration: "namedElements")
+    shadowCommon project(path: ":common", configuration: "transformProductionFabric")
+
+    // MixinExtras
+    implementation "io.github.llamalad7:mixinextras-fabric:0.5.3"
+    annotationProcessor "io.github.llamalad7:mixinextras-fabric:0.5.3"
+}
+
+processResources {
+    inputs.property 'version', project.version
+
+    filesMatching('fabric.mod.json') {
+        expand 'version': project.version,
+               'minecraft_version': rootProject.ext.minecraft_version,
+               'loader_version': rootProject.ext.loader_version
+    }
+}
+
+tasks.jar {
+    archiveClassifier = 'dev'
+}
+
+tasks.remapJar {
+    injectAccessWidener = true
+    archiveClassifier = null
+}
+
+tasks.sourcesJar {
+    def commonSources = project(':common').tasks.sourcesJar
+    dependsOn commonSources
+    from commonSources.archiveFile.collect { zipTree(it) }
+}

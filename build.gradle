@@ -1,17 +1,23 @@
 plugins {
-    id 'fabric-loom' version '1.2.7'
+    id 'java'
+    id 'dev.architectury.loom' version '1.10.437' apply false
+    id 'architectury-plugin' version '3.4.162'
     id 'maven-publish'
 }
 
-loom.runs.all {
-    // https://github.com/SpongePowered/Mixin/wiki/Mixin-Java-System-Properties
-    vmArg("-Dmixin.debug=true")
+ext {
+    minecraft_version = '1.20.1'
+    yarn_mappings = '1.20.1+build.10'
+    loader_version = '0.15.1'
+    mod_version = '1.1.3'
+    maven_group = 'ca.spottedleaf.starlight'
+    archives_base_name = 'starlight'
 }
 
-/*
- * Gets the version name from the latest Git tag
- */
-// https://stackoverflow.com/questions/28498688/gradle-script-to-autoversion-and-include-the-commit-hash-in-android
+architectury {
+    minecraft = project.ext.minecraft_version
+}
+
 def getGitCommit = { ->
     def stdout = new ByteArrayOutputStream()
     exec {
@@ -21,82 +27,49 @@ def getGitCommit = { ->
     return stdout.toString().trim()
 }
 
-archivesBaseName = project.archives_base_name
-version = project.mod_version + "+fabric." + getGitCommit()
-group = project.maven_group
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'dev.architectury.loom'
+    apply plugin: 'architectury-plugin'
 
-dependencies {
-    //to change the versions see the gradle.properties file
-    minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    //mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-    mappings loom.officialMojangMappings()
-    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-
-    // Fabric API. This is technically optional, but you probably want it anyway.
-    //modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-
-    // PSA: Some older mods, compiled on Loom 0.2.1, might have outdated Maven POMs.
-    // You may need to force-disable transitiveness on them.
-}
-
-processResources {
-    inputs.property "version", project.version
-
-    filesMatching("fabric.mod.json") {
-        expand "version": project.version, "minecraft_version": minecraft_version, "loader_version": loader_version, "mod_version": mod_version
-    }
-}
-
-// ensure that the encoding is set to UTF-8, no matter what the system default is
-// this fixes some edge cases with special characters not displaying correctly
-// see http://yodaconditions.net/blog/fix-for-java-file-encoding-problems-with-gradle.html
-tasks.withType(JavaCompile) {
-    options.encoding = "UTF-8"
-}
-
-loom {
-    accessWidenerPath = file("src/main/resources/starlight.accesswidener")
-}
-
-// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-// if it is present.
-// If you remove this task, sources will not be generated.
-java {
-    // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-    // if it is present.
-    // If you remove this line, sources will not be generated.
-    withSourcesJar()
-
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-}
-jar {
-    from "LICENSE"
-}
-
-// make build reproducible
-tasks.withType(AbstractArchiveTask) {
-    preserveFileTimestamps = false
-    reproducibleFileOrder = true
-}
-
-// configure the maven publication
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            // add all the jars that should be included when publishing to maven
-            artifact(remapJar) {
-                builtBy remapJar
-            }
-            artifact(sourcesJar) {
-                builtBy remapSourcesJar
-            }
-        }
+    base {
+        archivesName = "starlight-${project.name}-mc${rootProject.ext.minecraft_version}"
     }
 
-    // select the repositories you want to publish to
     repositories {
-        // uncomment to publish to the local maven
-        // mavenLocal()
+        maven { url 'https://maven.fabricmc.net/' }
+        maven { url 'https://maven.architectury.dev/' }
+        maven { url 'https://maven.minecraftforge.net/' }
+        mavenCentral()
     }
+
+    dependencies {
+        minecraft "com.mojang:minecraft:${rootProject.ext.minecraft_version}"
+        mappings loom.officialMojangMappings()
+
+        compileOnly "io.github.llamalad7:mixinextras-common:0.5.3"
+        annotationProcessor "io.github.llamalad7:mixinextras-common:0.5.3"
+    }
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(17)
+        }
+        withSourcesJar()
+    }
+
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
+        options.release = 17
+    }
+
+    tasks.withType(AbstractArchiveTask) {
+        preserveFileTimestamps = false
+        reproducibleFileOrder = true
+    }
+}
+
+allprojects {
+    group = rootProject.ext.maven_group
+    version = rootProject.ext.mod_version + "+mc" + rootProject.ext.minecraft_version + "." + getGitCommit()
 }
